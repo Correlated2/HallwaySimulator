@@ -56,7 +56,7 @@ public class VectorPanel extends JPanel {
 		for(int y=0; y<dungeon.getHeight(); y++) {
 			for(int x=0; x<dungeon.getWidth(); x++) {
 				DungeonTile tile = dungeon.get(x, y);
-				if (tile!=null) {
+				if (tile!=null && tile.type!=TileType.OOB) {
 					//TODO: Walls
 					g.setColor(new Color(tile.type.color));
 					g.fillRect(x*zoom, y*zoom, zoom, zoom);

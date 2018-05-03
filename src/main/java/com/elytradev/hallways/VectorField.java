@@ -25,6 +25,8 @@
 package com.elytradev.hallways;
 import static java.lang.Math.*;
 
+import java.util.function.Supplier;
+
 public class VectorField<T> {
 	
 	private int width = 1;
@@ -96,6 +98,17 @@ public class VectorField<T> {
 	public T get(int x, int y) {
 		if (x<0 || y<0 || x>=width || y>=height) return null; //SILENT BUT DEADLY
 		return cells[y*width+x];
+	}
+	
+	public T getOrCreate(int x, int y, Supplier<T> supplier) {
+		if (x<0 || y<0 || x>=width || y>=height) return supplier.get();
+		T result = cells[y*width+x];
+		if (result==null) {
+			result = supplier.get();
+			cells[y*width+x] = result;
+		}
+		
+		return result;
 	}
 	
 	/**

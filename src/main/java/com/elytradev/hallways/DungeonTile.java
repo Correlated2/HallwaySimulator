@@ -27,19 +27,14 @@ package com.elytradev.hallways;
 import java.util.EnumSet;
 
 public class DungeonTile implements ITagSerializable, Cloneable {
-	public enum TileType {
-		HALLWAY(0x00FF00),
-		ROOM(0x0000FF),
-		ENTRANCE(0xFFFF88),
-		EXIT(0xFF00FF);
-		public final int color;
-		private TileType(int color) {
-			this.color = color;
-		}
-	}
-
+	public String palette;
 	public TileType type;
 	public EnumSet<Cardinal> exits;
+	
+	public DungeonTile() {
+		this.type = TileType.OOB;
+		this.exits = EnumSet.noneOf(Cardinal.class);
+	}
 	
 	public DungeonTile(TileType type) {
 		this.type = type;

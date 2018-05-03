@@ -24,29 +24,14 @@
 
 package com.elytradev.hallways;
 
-import javax.swing.JFrame;
-
-/**
- * @author Falkreon
- */
-public class HallwayGenerator {
-	
-	public static void main(String... args) {
-
-		VectorField<DungeonTile> selected = null;
-		
-		selected = new FieldGenerator()
-				.withEntrance(0, 4)
-				.withExit(63, 59)
-				.withPalettes("clean","rough")
-				.withRoomSize(2, 6)
-				.generate(32);
-		
-		JFrame main = new JFrame("Hallway Simulator 20XX");
-		main.add(new VectorPanel(selected, 16));
-		main.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		main.pack();
-		main.setVisible(true);
-		
+public enum TileType {
+	HALLWAY(0x00FF00),
+	ROOM(0x0000FF),
+	DOOR(0x00CC00),
+	OOB(0x000000),
+	;
+	public final int color;
+	private TileType(int color) {
+		this.color = color;
 	}
 }
