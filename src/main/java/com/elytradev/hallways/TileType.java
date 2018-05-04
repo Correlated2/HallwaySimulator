@@ -26,9 +26,12 @@ package com.elytradev.hallways;
 
 public enum TileType {
 	HALLWAY(0x00FF00),
-	ROOM(0x0000FF),
-	DOOR(0x00CC00),
+	ROOM(0x3377FF),
+	DOOR(0xAACC00),
 	OOB(0x000000),
+	MARKER_A(0xFF7777),
+	MARKER_B(0x77FF77),
+	MARKER_C(0x7777FF),
 	;
 	public final int color;
 	private TileType(int color) {

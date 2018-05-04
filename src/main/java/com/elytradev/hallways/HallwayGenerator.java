@@ -39,11 +39,11 @@ public class HallwayGenerator {
 				.withEntrance(0, 4)
 				.withExit(63, 59)
 				.withPalettes("clean","rough")
-				.withRoomSize(2, 6)
-				.generate(32);
+				.withRoomSize(3, 6)
+				.generate(256);
 		
 		JFrame main = new JFrame("Hallway Simulator 20XX");
-		main.add(new VectorPanel(selected, 16));
+		main.add(new VectorPanel(selected, 8));
 		main.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		main.pack();
 		main.setVisible(true);

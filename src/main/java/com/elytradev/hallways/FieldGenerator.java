@@ -26,6 +26,7 @@ package com.elytradev.hallways;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
@@ -99,8 +100,8 @@ public class FieldGenerator {
 			Vec2i p2 = sides.get(random.nextInt(sides.size()));
 			x1=p1.x;
 			y1=p1.y;
-			x2=p1.x;
-			y2=p1.y;
+			x2=p2.x;
+			y2=p2.y;
 		}
 		
 		int dungeonSize = in.getWidth();
@@ -163,6 +164,26 @@ public class FieldGenerator {
 		}
 		
 		
+		//SANITY CHECKS - Uncull Faces
+		//int unculledFaces = 0;
+		for(int y=0; y<field.getHeight(); y++) {
+			for(int x=0; x<field.getWidth(); x++) {
+				DungeonTile tile = field.get(x, y);
+				if (tile==null || tile.type==TileType.OOB) continue;
+				EnumSet<Cardinal> brokenExits = EnumSet.noneOf(Cardinal.class);
+				for(Cardinal dir : tile.exits) {
+					DungeonTile target = field.get(x+dir.xOfs(), y+dir.yOfs());
+					if (target==null || target.type==TileType.OOB) {
+						brokenExits.add(dir);
+						//unculledFaces++;
+					}
+				}
+				tile.exits.removeAll(brokenExits);
+			}
+		}
+		//System.out.println("Unculled Faces: "+unculledFaces);
+		//UNCULLED FACES NOW DOWN TO NONE O_O
+		
 		return in;
 	}
 	
@@ -219,6 +240,12 @@ public class FieldGenerator {
 		}
 	}
 	
+	private static Cardinal dirToRoom(Vec2i terminal, Room room) {
+		if (terminal.x<room.x) return Cardinal.EAST;
+		if (terminal.y<room.y) return Cardinal.SOUTH;
+		if (terminal.x>=room.x+room.width) return Cardinal.WEST;
+		return Cardinal.NORTH;
+	}
 	
 	private boolean tryConnectRooms(Room a, Room b) {
 		int xdir = (int)Math.signum( (b.x+(b.width/2)) - (a.x+(a.width/2)) );
@@ -258,8 +285,32 @@ public class FieldGenerator {
 			line(x1,y1,primary.x,primary.y,false,a.palette);
 			line(primary.x,primary.y,x2,y2,false,a.palette);
 			
-			DungeonTile door1 = field.getOrCreate(x1, y1, DungeonTile::new); door1.type = TileType.DOOR;
-			DungeonTile door2 = field.getOrCreate(x2, y2, DungeonTile::new); door2.type = TileType.DOOR;
+			//Fix the corner
+			DungeonTile corner = field.getOrCreate(primary.x, primary.y, DungeonTile::new);
+			Cardinal cornerTo1 = Cardinal.fromTo(primary, new Vec2i(x1,y1));
+			Cardinal cornerTo2 = Cardinal.fromTo(primary, new Vec2i(x2,y2));
+			if (x1!=primary.x && y1!=primary.y) corner.exits.add(cornerTo1);
+			if (x2!=primary.x && y2!=primary.y) corner.exits.add(cornerTo2);
+			DungeonTile neighbor1 = field.getOrCreate(primary.x+cornerTo1.xOfs(), primary.y+cornerTo1.yOfs(), DungeonTile::new);
+			neighbor1.exits.add(cornerTo1.cw().cw());
+			DungeonTile neighbor2 = field.getOrCreate(primary.x+cornerTo2.xOfs(), primary.y+cornerTo2.yOfs(), DungeonTile::new);
+			neighbor2.exits.add(cornerTo2.cw().cw());
+			
+			
+			//Make doors
+			DungeonTile door1 = field.getOrCreate(x1, y1, DungeonTile::new);
+			door1.type = TileType.DOOR;
+			Cardinal doorDir1 = dirToRoom(term1, a);
+			door1.exits.add(doorDir1);
+			DungeonTile roomToDoor1= field.getOrCreate(x1+doorDir1.xOfs(), y1+doorDir1.yOfs(), DungeonTile::new);
+			roomToDoor1.exits.add(doorDir1.cw().cw());
+			
+			DungeonTile door2 = field.getOrCreate(x2, y2, DungeonTile::new);
+			door2.type = TileType.DOOR;
+			Cardinal doorDir2 = dirToRoom(term2, b);
+			door2.exits.add(doorDir2);
+			DungeonTile roomToDoor2 = field.getOrCreate(x2+doorDir2.xOfs(), y2+doorDir2.yOfs(), DungeonTile::new);
+			roomToDoor2.exits.add(doorDir2.cw().cw());
 			//TODO: Add graph notation for the doors so they can be queried later
 			
 			return true;
@@ -267,8 +318,33 @@ public class FieldGenerator {
 			line(x1,y1,secondary.x,secondary.y,false,a.palette);
 			line(secondary.x,secondary.y,x2,y2,false,a.palette);
 			
-			DungeonTile door1 = field.getOrCreate(x1, y1, DungeonTile::new); door1.type = TileType.DOOR;
-			DungeonTile door2 = field.getOrCreate(x2, y2, DungeonTile::new); door2.type = TileType.DOOR;
+			//Fix the corner
+			DungeonTile corner = field.getOrCreate(secondary.x, secondary.y, DungeonTile::new);
+			Cardinal cornerTo1 = Cardinal.fromTo(secondary, new Vec2i(x1,y1));
+			Cardinal cornerTo2 = Cardinal.fromTo(secondary, new Vec2i(x2,y2));
+			if (x1!=secondary.x && y1!=secondary.y) corner.exits.add(cornerTo1);
+			if (x2!=secondary.x && y2!=secondary.y) corner.exits.add(cornerTo1);
+			corner.exits.add(cornerTo2);
+			DungeonTile neighbor1 = field.getOrCreate(secondary.x+cornerTo1.xOfs(), secondary.y+cornerTo1.yOfs(), DungeonTile::new);
+			neighbor1.exits.add(cornerTo1.cw().cw());
+			DungeonTile neighbor2 = field.getOrCreate(secondary.x+cornerTo2.xOfs(), secondary.y+cornerTo2.yOfs(), DungeonTile::new);
+			neighbor2.exits.add(cornerTo2.cw().cw());
+			
+			
+			//Make doors
+			DungeonTile door1 = field.getOrCreate(x1, y1, DungeonTile::new);
+			door1.type = TileType.DOOR;
+			Cardinal doorDir1 = dirToRoom(term1, a);
+			door1.exits.add(doorDir1);
+			DungeonTile roomToDoor1= field.getOrCreate(x1+doorDir1.xOfs(), y1+doorDir1.yOfs(), DungeonTile::new);
+			roomToDoor1.exits.add(doorDir1.cw().cw());
+			
+			DungeonTile door2 = field.getOrCreate(x2, y2, DungeonTile::new);
+			door2.type = TileType.DOOR;
+			Cardinal doorDir2 = dirToRoom(term2, b);
+			door2.exits.add(doorDir2);
+			DungeonTile roomToDoor2 = field.getOrCreate(x2+doorDir2.xOfs(), y2+doorDir2.yOfs(), DungeonTile::new);
+			roomToDoor2.exits.add(doorDir2.cw().cw());
 			
 			return true;
 		} else {
@@ -276,6 +352,7 @@ public class FieldGenerator {
 		}
 	}
 	
+	/*
 	private boolean line(int x1, int y1, int x2, int y2, boolean simulate, String palette) {
 		//This actually is a bresenham line. DO NOT USE diagonals!
 		
@@ -288,20 +365,68 @@ public class FieldGenerator {
 		
 		float x = x1+0.5f;
 		float y = y1+0.5f;
-		int lastX = (int)x;
-		int lastY = (int)y;
+		Vec2i last = new Vec2i((int)x, (int)y);
+		boolean firstIter = true;
 		for(int i=0; i<iterations; i++) {
-			
+			Vec2i cur = new Vec2i((int)x, (int)y);
 			//if (i==iterations-1) continue;
 			
 			DungeonTile tile = field.getOrCreate((int)x, (int)y, DungeonTile::new);
 			if (tile.type!=null && tile.type!=TileType.OOB && simulate) return false;
 			if (!simulate) {
 				tile.type = TileType.HALLWAY;
+				if (!firstIter) {
+					Cardinal dir = Cardinal.fromTo(last, cur);
+					Cardinal back = dir.cw().cw();
+					DungeonTile lastTile = field.getOrCreate(last.x, last.y, DungeonTile::new);
+					lastTile.exits.add(dir);
+					tile.exits.add(back);
+				}
+				firstIter = false;
+				//Figure out the Cardinal for lastx->x
 				//if (i==iterations-1) tile.type = TileType.DOOR;
 				//TODO: Set the wall types for x and y
 			}
 			
+			x += dx;
+			y += dy;
+			last = cur;
+		}
+		return true;
+	}*/
+	
+	private boolean line(int x1, int y1, int x2, int y2, boolean simulate, String palette) {
+		int dx = x2-x1;
+		int dy = y2-y1;
+		if (dx!=0 && dy!=0) return false;
+		int iterations = Math.max(Math.abs(dx), Math.abs(dy))+1;
+		dx = (int)Math.signum(dx);
+		dy = (int)Math.signum(dy);
+		int x = x1;
+		int y = y1;
+		int lastX = x;
+		int lastY = y;
+		boolean firstIter = true;
+		for(int i=0; i<iterations; i++) {
+			DungeonTile tile = field.getOrCreate((int)x, (int)y, DungeonTile::new);
+			if (tile.type!=null && tile.type!=TileType.OOB && simulate) return false;
+			if (!simulate) {
+				tile.type = TileType.HALLWAY;
+			
+				if (!firstIter) {
+					Cardinal dir = Cardinal.fromTo(new Vec2i(lastX, lastY), new Vec2i(x, y));
+					Cardinal back = dir.cw().cw();
+					DungeonTile lastTile = field.getOrCreate(lastX, lastY, DungeonTile::new);
+					lastTile.exits.add(dir);
+					tile.exits.add(back);
+				} else {
+					//tile.type = TileType.MARKER_A;
+				}
+			}
+			firstIter = false;
+			lastX = x;
+			lastY = y;
+			if (x==x2 && y==y2) return true;
 			x += dx;
 			y += dy;
 		}
@@ -313,6 +438,11 @@ public class FieldGenerator {
 		for(int y=0; y<r.height; y++) {
 			for(int x=0; x<r.width; x++) {
 				DungeonTile tile = field.getOrCreate(r.x+x, r.y+y, DungeonTile::new);
+				tile.exits = EnumSet.allOf(Cardinal.class);
+				if (x==0) tile.exits.remove(Cardinal.WEST);
+				if (x==r.width-1) tile.exits.remove(Cardinal.EAST);
+				if (y==0) tile.exits.remove(Cardinal.NORTH);
+				if (y==r.height-1) tile.exits.remove(Cardinal.SOUTH);
 				tile.palette = r.palette;
 				tile.type = TileType.ROOM;
 			}
