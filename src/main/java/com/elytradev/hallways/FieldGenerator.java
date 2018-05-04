@@ -105,7 +105,7 @@ public class FieldGenerator {
 		}
 		
 		int dungeonSize = in.getWidth();
-		int initialCellSize = maxRoomSize+2;
+		int initialCellSize = maxRoomSize;
 		int cellSize = initialCellSize;
 		for(int i=0;i<initialCellSize; i++) {
 			cellSize = initialCellSize;
@@ -120,10 +120,10 @@ public class FieldGenerator {
 			for(int x=0; x<cellsAcross; x++) {
 				int width = random.nextInt(maxRoomSize-minRoomSize)+minRoomSize;
 				int height = random.nextInt(maxRoomSize-minRoomSize)+minRoomSize;
-				int wiggleX = (cellSize-2)-width;
-				int roomX = random.nextInt(wiggleX)+1;
-				int wiggleY = (cellSize-2)-height;
-				int roomY = random.nextInt(wiggleY)+1;
+				int wiggleX = (cellSize)-width;
+				int roomX = random.nextInt(wiggleX);
+				int wiggleY = (cellSize)-height;
+				int roomY = random.nextInt(wiggleY);
 				Room room = new Room(roomX + (x*cellSize), roomY + (y*cellSize), width, height);
 				rooms.add(room);
 				disconnected.add(room);
