@@ -200,8 +200,8 @@ public class FieldGenerator {
 	}
 	
 	private RoomPair findRoomPair(int cellSize, List<Room> connectedRooms, List<Room> unconnectedRooms) {
-		Collections.shuffle(connectedRooms);
-		Collections.shuffle(unconnectedRooms);
+		Collections.shuffle(connectedRooms, random);
+		Collections.shuffle(unconnectedRooms, random);
 		
 		for(Room r : unconnectedRooms) {
 			RoomPair pair = tryMakePair(cellSize, r, connectedRooms);
@@ -408,7 +408,7 @@ public class FieldGenerator {
 		int lastY = y;
 		boolean firstIter = true;
 		for(int i=0; i<iterations; i++) {
-			DungeonTile tile = field.getOrCreate((int)x, (int)y, DungeonTile::new);
+			DungeonTile tile = field.getOrCreate(x, y, DungeonTile::new);
 			if (tile.type!=null && tile.type!=TileType.OOB && simulate) return false;
 			if (!simulate) {
 				tile.type = TileType.HALLWAY;
